@@ -24,6 +24,7 @@ const indexDisplay = document.getElementById('index-display');
 const speedSlider = document.getElementById('speed-slider');
 const speedValue = document.getElementById('speed-value');
 const ledToggle = document.getElementById('led-toggle');
+const powerBtn = document.getElementById('power-btn');
 
 // State
 let currentPhotoIndex = 1;
@@ -71,6 +72,17 @@ function updatePrismView() {
     }
     
     indexDisplay.textContent = `${currentPhotoIndex} / ${TOTAL_FACES}`;
+    updatePowerBtnState();
+}
+
+function updatePowerBtnState() {
+    // Device is considered OFF only if on black screen (8) AND led is off
+    const isOff = (currentPhotoIndex === 8 && !ledToggle.checked);
+    if (isOff) {
+        powerBtn.className = 'power-icon-btn off';
+    } else {
+        powerBtn.className = 'power-icon-btn on';
+    }
 }
 
 // Connection Status Logic
@@ -106,6 +118,7 @@ deviceRef.on('value', (snapshot) => {
             ledToggle.checked = data.led;
         }
         
+        updatePowerBtnState();
         isUpdatingFromFirebase = false;
     }
 }, (error) => {
@@ -148,6 +161,26 @@ speedSlider.addEventListener('input', (e) => {
 
 ledToggle.addEventListener('change', (e) => {
     updateFirebaseDevice({ led: e.target.checked });
+    updatePowerBtnState();
+});
+
+powerBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isOff = (currentPhotoIndex === 8 && !ledToggle.checked);
+    
+    if (isOff) {
+        // Turn ON: photo 1, LED true
+        updateFirebaseDevice({ photoIndex: 1, led: true });
+        currentPhotoIndex = 1;
+        ledToggle.checked = true;
+    } else {
+        // Turn OFF: photo 8 (black screen), LED false
+        updateFirebaseDevice({ photoIndex: 8, led: false });
+        currentPhotoIndex = 8;
+        ledToggle.checked = false;
+    }
+    
+    updatePrismView(); // This will also call updatePowerBtnState()
 });
 
 // Prevent Double-Tap Zoom on iOS / Mobile Safari
