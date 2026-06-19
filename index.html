@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Box - Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Memory Box</h1>
+            <div class="status-indicator" id="connection-status">
+                <span class="dot"></span>
+                <span class="text">Bağlanıyor...</span>
+            </div>
+        </header>
+
+        <!-- Main 3D Prism Area -->
+        <main class="prism-section">
+            <button class="nav-btn left-btn" id="prev-btn" aria-label="Previous Photo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            
+            <div class="prism-container">
+                <div class="prism" id="prism">
+                    <!-- Images will be injected here by JS -->
+                </div>
+            </div>
+
+            <button class="nav-btn right-btn" id="next-btn" aria-label="Next Photo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+        </main>
+
+        <div class="index-display" id="index-display">1 / 8</div>
+
+        <!-- Control Panel Area -->
+        <footer class="control-panel">
+            <div class="control-group">
+                <div class="control-header">
+                    <label for="speed-slider">Dönüş Hızı</label>
+                    <span class="speed-value" id="speed-value">20</span>
+                </div>
+                <input type="range" id="speed-slider" min="10" max="80" value="20" class="slider">
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="control-group row-group">
+                <label for="led-toggle">LED Işıkları</label>
+                <label class="switch">
+                    <input type="checkbox" id="led-toggle" checked>
+                    <span class="slider-toggle round"></span>
+                </label>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK (Compat version for local file:// usage) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    
+    <!-- App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
