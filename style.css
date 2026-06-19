@@ -25,7 +25,7 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    touch-action: none; /* Prevents pull-to-refresh and pinch-zoom */
+    touch-action: manipulation; /* Allows sliding but prevents double-tap zoom */
     -webkit-user-select: none; /* Prevents double-tap selection zoom */
     user-select: none;
 }

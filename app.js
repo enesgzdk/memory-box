@@ -73,14 +73,23 @@ function updatePrismView() {
     indexDisplay.textContent = `${currentPhotoIndex} / ${TOTAL_FACES}`;
 }
 
+// Connection Status Logic
+const connectedRef = firebase.database().ref(".info/connected");
+connectedRef.on("value", (snap) => {
+    if (snap.val() === true) {
+        connectionStatus.classList.add('connected');
+        connectionStatus.querySelector('.text').textContent = 'Bağlı';
+    } else {
+        connectionStatus.classList.remove('connected');
+        connectionStatus.querySelector('.text').textContent = 'Bağlantı Kesildi...';
+    }
+});
+
 // Firebase to UI Sync
 deviceRef.on('value', (snapshot) => {
     const data = snapshot.val();
     
     if (data) {
-        connectionStatus.classList.add('connected');
-        connectionStatus.querySelector('.text').textContent = 'Bağlı';
-        
         isUpdatingFromFirebase = true;
         
         if (data.photoIndex >= 1 && data.photoIndex <= TOTAL_FACES) {
@@ -101,8 +110,6 @@ deviceRef.on('value', (snapshot) => {
     }
 }, (error) => {
     console.error("Firebase Error: ", error);
-    connectionStatus.classList.remove('connected');
-    connectionStatus.querySelector('.text').textContent = 'Bağlantı Hatası';
 });
 
 // UI to Firebase Sync Functions
@@ -113,7 +120,8 @@ function updateFirebaseDevice(updates) {
 }
 
 // Event Listeners
-prevBtn.addEventListener('click', () => {
+prevBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     let newIndex = currentPhotoIndex - 1;
     if (newIndex < 1) newIndex = TOTAL_FACES;
     
@@ -122,7 +130,8 @@ prevBtn.addEventListener('click', () => {
     updatePrismView();
 });
 
-nextBtn.addEventListener('click', () => {
+nextBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     let newIndex = currentPhotoIndex + 1;
     if (newIndex > TOTAL_FACES) newIndex = 1;
     
@@ -140,6 +149,20 @@ speedSlider.addEventListener('input', (e) => {
 ledToggle.addEventListener('change', (e) => {
     updateFirebaseDevice({ led: e.target.checked });
 });
+
+// Prevent Double-Tap Zoom on iOS / Mobile Safari
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
+document.addEventListener('dblclick', function(event) {
+    event.preventDefault();
+}, { passive: false });
 
 // Boot up
 initPrism();
