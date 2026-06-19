@@ -25,6 +25,10 @@ const speedSlider = document.getElementById('speed-slider');
 const speedValue = document.getElementById('speed-value');
 const ledToggle = document.getElementById('led-toggle');
 const powerBtn = document.getElementById('power-btn');
+const calBtn = document.getElementById('cal-btn');
+const calModal = document.getElementById('calibration-modal');
+const calCancelBtn = document.getElementById('cal-cancel-btn');
+const calConfirmBtn = document.getElementById('cal-confirm-btn');
 
 // State
 let currentPhotoIndex = 1;
@@ -169,18 +173,37 @@ powerBtn.addEventListener('click', (e) => {
     const isOff = (currentPhotoIndex === 8 && !ledToggle.checked);
     
     if (isOff) {
-        // Turn ON: photo 1, LED true
         updateFirebaseDevice({ photoIndex: 1, led: true });
         currentPhotoIndex = 1;
         ledToggle.checked = true;
     } else {
-        // Turn OFF: photo 8 (black screen), LED false
         updateFirebaseDevice({ photoIndex: 8, led: false });
         currentPhotoIndex = 8;
         ledToggle.checked = false;
     }
     
-    updatePrismView(); // This will also call updatePowerBtnState()
+    updatePrismView();
+});
+
+// Calibration Modal Logic
+calBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    calModal.classList.add('active');
+});
+
+calCancelBtn.addEventListener('click', () => {
+    calModal.classList.remove('active');
+});
+
+calConfirmBtn.addEventListener('click', () => {
+    calConfirmBtn.textContent = 'Ayarlanıyor...';
+    calConfirmBtn.disabled = true;
+    
+    updateFirebaseDevice({ calibrate: true });
+    
+    setTimeout(() => {
+        window.location.reload();
+    }, 3000);
 });
 
 // Prevent Double-Tap Zoom on iOS / Mobile Safari
