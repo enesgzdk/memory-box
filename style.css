@@ -20,20 +20,23 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-primary);
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    touch-action: none; /* Prevents pull-to-refresh and pinch-zoom */
+    -webkit-user-select: none; /* Prevents double-tap selection zoom */
+    user-select: none;
 }
 
 .app-container {
     width: 100%;
     max-width: 480px; /* Mobile optimized max width */
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    padding: 20px;
     background: radial-gradient(circle at 50% 0%, rgba(20, 20, 30, 1) 0%, var(--bg-color) 70%);
 }
 
@@ -42,7 +45,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 .header h1 {
@@ -84,7 +87,8 @@ body {
     justify-content: space-between;
     position: relative;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    min-height: 0;
 }
 
 .nav-btn {
@@ -200,7 +204,7 @@ body {
     font-size: 14px;
     font-weight: 500;
     color: var(--text-secondary);
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     letter-spacing: 2px;
 }
 
@@ -209,10 +213,11 @@ body {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 24px;
-    padding: 24px;
+    padding: 20px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    margin-bottom: 10px;
 }
 
 .control-group {
@@ -345,10 +350,29 @@ input:checked + .slider-toggle:before {
 }
 
 /* Mobile Adjustments */
+@media (max-height: 700px) {
+    .prism-container {
+        height: 220px;
+    }
+    .prism {
+        width: 160px;
+        height: 160px;
+    }
+    .header {
+        margin-bottom: 10px;
+    }
+    .control-panel {
+        padding: 16px;
+    }
+    .app-container {
+        padding: 16px;
+    }
+}
+
 @media (max-width: 380px) {
     .prism {
-        width: 180px;
-        height: 180px;
+        width: 160px;
+        height: 160px;
     }
     .nav-btn {
         width: 40px;
