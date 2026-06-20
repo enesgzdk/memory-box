@@ -5,9 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Memory Box</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
+    <!-- Splash / Loading Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <h1 class="splash-title">Memory Box</h1>
+            <div class="splash-loader-line"></div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="header">
@@ -16,7 +24,7 @@
                 <button id="power-btn" class="power-icon-btn on" aria-label="Power">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
                 </button>
-                <button id="cal-btn" class="cal-icon-btn" aria-label="Calibrate">
+                <button id="settings-btn" class="cal-icon-btn" aria-label="Ayarlar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
             </div>
@@ -64,17 +72,49 @@
                     <span class="slider-toggle round"></span>
                 </label>
             </div>
+
+            <div class="divider"></div>
+
+            <div class="control-group row-group">
+                <label for="slide-toggle">Slayt Modu</label>
+                <label class="switch">
+                    <input type="checkbox" id="slide-toggle">
+                    <span class="slider-toggle round"></span>
+                </label>
+            </div>
         </footer>
     </div>
 
-    <!-- Calibration Modal -->
-    <div id="calibration-modal" class="modal-overlay">
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
         <div class="modal-content">
-            <h2 class="modal-title">Kalibrasyon</h2>
-            <p class="modal-text">Lütfen kutunun üzerindeki fiziksel fotoğraf ile ekranda görünen fotoğrafın aynı olduğuna emin olun. Bu işlem cihazı ekrandaki duruma senkronize edecektir.</p>
-            <div class="modal-actions">
-                <button id="cal-cancel-btn" class="btn-secondary">İptal</button>
-                <button id="cal-confirm-btn" class="btn-primary">Kalibre Et</button>
+            <h2 class="modal-title">Gelişmiş Ayarlar</h2>
+            
+            <div class="settings-section" id="slide-time-group">
+                <h3>Slayt Süresi</h3>
+                <p class="modal-text" style="font-size: 13px; margin-bottom: 12px;">Fotoğrafların ekranda kalma süresi:</p>
+                <div class="control-group row-group">
+                    <label for="slide-time">Süreyi Seçin</label>
+                    <select id="slide-time" class="custom-select">
+                        <option value="60">1 Dakika</option>
+                        <option value="300">5 Dakika</option>
+                        <option value="600">10 Dakika</option>
+                        <option value="1800">30 Dakika</option>
+                    </select>
+                </div>
+                <p id="slide-note" style="font-size: 11.5px; color: var(--danger-color); margin-top: 10px; font-style: italic;">Süreyi ayarlayabilmek için Slayt Modu'nu açmalısınız.</p>
+            </div>
+
+            <div class="divider" style="margin: 25px 0;"></div>
+            
+            <div class="settings-section">
+                <h3>Senkronizasyon</h3>
+                <p class="modal-text">Fiziksel cihaz üzerindeki fotoğraf ile ekrandaki fotoğrafın aynı hizaya geldiğinden emin olun.</p>
+                <button class="btn btn-primary" id="cal-confirm-btn">Kalibre Et</button>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button class="btn btn-secondary" id="settings-close-btn" style="width: 100%;">Kapat</button>
             </div>
         </div>
     </div>

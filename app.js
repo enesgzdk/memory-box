@@ -25,15 +25,41 @@ const speedSlider = document.getElementById('speed-slider');
 const speedValue = document.getElementById('speed-value');
 const ledToggle = document.getElementById('led-toggle');
 const powerBtn = document.getElementById('power-btn');
-const calBtn = document.getElementById('cal-btn');
-const calModal = document.getElementById('calibration-modal');
-const calCancelBtn = document.getElementById('cal-cancel-btn');
+const settingsBtn = document.getElementById('settings-btn');
+const slideToggle = document.getElementById('slide-toggle');
+const slideTime = document.getElementById('slide-time');
+const slideTimeGroup = document.getElementById('slide-time-group');
+const settingsModal = document.getElementById('settings-modal');
+const settingsCloseBtn = document.getElementById('settings-close-btn');
 const calConfirmBtn = document.getElementById('cal-confirm-btn');
+const splashScreen = document.getElementById('splash-screen');
 
 // State
 let currentPhotoIndex = 1;
 const TOTAL_FACES = 8;
 let isUpdatingFromFirebase = false;
+
+// Splash Screen Logic
+let hasInitialData = false;
+let isConnected = false;
+let splashHidden = false;
+
+function checkAndHideSplash() {
+    if (!splashHidden && isConnected && hasInitialData) {
+        splashHidden = true;
+        setTimeout(() => {
+            splashScreen.classList.add('hidden');
+        }, 800); // Minimum wait for aesthetic feel
+    }
+}
+
+// Fallback: always hide splash after 5 seconds just in case of network issues
+setTimeout(() => {
+    if (!splashHidden) {
+        splashHidden = true;
+        splashScreen.classList.add('hidden');
+    }
+}, 5000);
 
 // Initialize Prism Images
 function initPrism() {
@@ -93,13 +119,44 @@ function updatePowerBtnState() {
 const connectedRef = firebase.database().ref(".info/connected");
 connectedRef.on("value", (snap) => {
     if (snap.val() === true) {
+        isConnected = true;
+        checkAndHideSplash();
+        
         connectionStatus.classList.add('connected');
         connectionStatus.querySelector('.text').textContent = 'Bağlı';
     } else {
+        isConnected = false;
         connectionStatus.classList.remove('connected');
         connectionStatus.querySelector('.text').textContent = 'Bağlantı Kesildi...';
     }
 });
+
+function applyFirebaseData(data) {
+    if (data.photoIndex >= 1 && data.photoIndex <= TOTAL_FACES) {
+        currentPhotoIndex = data.photoIndex;
+        updatePrismView();
+    }
+    
+    if (data.speed !== undefined) {
+        speedSlider.value = data.speed;
+        speedValue.textContent = data.speed;
+    }
+    
+    if (data.led !== undefined) {
+        ledToggle.checked = data.led;
+    }
+    
+    if (data.slideMode !== undefined) {
+        slideToggle.checked = data.slideMode;
+    }
+    
+    if (data.slideInterval !== undefined) {
+        slideTime.value = data.slideInterval;
+    }
+    
+    updatePowerBtnState();
+    updateSlideTimeVisibility();
+}
 
 // Firebase to UI Sync
 deviceRef.on('value', (snapshot) => {
@@ -107,27 +164,30 @@ deviceRef.on('value', (snapshot) => {
     
     if (data) {
         isUpdatingFromFirebase = true;
-        
-        if (data.photoIndex >= 1 && data.photoIndex <= TOTAL_FACES) {
-            currentPhotoIndex = data.photoIndex;
-            updatePrismView();
-        }
-        
-        if (data.speed !== undefined) {
-            speedSlider.value = data.speed;
-            speedValue.textContent = data.speed;
-        }
-        
-        if (data.led !== undefined) {
-            ledToggle.checked = data.led;
-        }
-        
-        updatePowerBtnState();
+        applyFirebaseData(data);
         isUpdatingFromFirebase = false;
+        
+        if (!hasInitialData) {
+            hasInitialData = true;
+            checkAndHideSplash();
+        }
     }
 }, (error) => {
     console.error("Firebase Error: ", error);
 });
+
+// Periodic Fallback Sync (1 minute)
+setInterval(() => {
+    if (!isUpdatingFromFirebase) {
+        deviceRef.get().then((snapshot) => {
+            if (snapshot.exists()) {
+                isUpdatingFromFirebase = true;
+                applyFirebaseData(snapshot.val());
+                isUpdatingFromFirebase = false;
+            }
+        });
+    }
+}, 60000);
 
 // UI to Firebase Sync Functions
 function updateFirebaseDevice(updates) {
@@ -157,15 +217,45 @@ nextBtn.addEventListener('click', (e) => {
     updatePrismView();
 });
 
+let speedDebounceTimer;
 speedSlider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
-    speedValue.textContent = val;
-    updateFirebaseDevice({ speed: val });
+    speedValue.textContent = val; // Ekranda sayıyı anında güncelle
+    
+    // Firebase'e göndermeyi geciktir (Debounce)
+    clearTimeout(speedDebounceTimer);
+    speedDebounceTimer = setTimeout(() => {
+        updateFirebaseDevice({ speed: val });
+    }, 400); // 400ms hareketsizlikten sonra gönder
 });
 
 ledToggle.addEventListener('change', (e) => {
     updateFirebaseDevice({ led: e.target.checked });
     updatePowerBtnState();
+});
+
+function updateSlideTimeVisibility() {
+    const note = document.getElementById('slide-note');
+    if (slideToggle.checked) {
+        slideTime.disabled = false;
+        slideTime.style.opacity = '1';
+        slideTime.style.pointerEvents = 'auto';
+        if (note) note.style.display = 'none';
+    } else {
+        slideTime.disabled = true;
+        slideTime.style.opacity = '0.5';
+        slideTime.style.pointerEvents = 'none';
+        if (note) note.style.display = 'block';
+    }
+}
+
+slideToggle.addEventListener('change', (e) => {
+    updateFirebaseDevice({ slideMode: e.target.checked });
+    updateSlideTimeVisibility();
+});
+
+slideTime.addEventListener('change', (e) => {
+    updateFirebaseDevice({ slideInterval: parseInt(e.target.value) });
 });
 
 powerBtn.addEventListener('click', (e) => {
@@ -185,14 +275,13 @@ powerBtn.addEventListener('click', (e) => {
     updatePrismView();
 });
 
-// Calibration Modal Logic
-calBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    calModal.classList.add('active');
+// Modal Logic
+settingsBtn.addEventListener('click', () => {
+    settingsModal.classList.add('active');
 });
 
-calCancelBtn.addEventListener('click', () => {
-    calModal.classList.remove('active');
+settingsCloseBtn.addEventListener('click', () => {
+    settingsModal.classList.remove('active');
 });
 
 calConfirmBtn.addEventListener('click', () => {
