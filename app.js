@@ -71,7 +71,7 @@ function initPrism() {
             item.classList.add('black-screen');
         } else {
             const img = document.createElement('img');
-            img.src = `https://picsum.photos/seed/memorybox${i}/400/400`;
+            img.src = `./src/${i}.jpg`;
             img.alt = `Photo ${i}`;
             item.appendChild(img);
         }
