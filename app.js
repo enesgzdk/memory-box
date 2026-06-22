@@ -132,14 +132,20 @@ connectedRef.on("value", (snap) => {
 });
 
 function applyFirebaseData(data) {
-    if (data.photoIndex >= 1 && data.photoIndex <= TOTAL_FACES) {
-        currentPhotoIndex = data.photoIndex;
-        updatePrismView();
+    if (data.photoIndex !== undefined) {
+        const pIndex = parseInt(data.photoIndex, 10);
+        if (!isNaN(pIndex) && pIndex >= 1 && pIndex <= TOTAL_FACES) {
+            currentPhotoIndex = pIndex;
+            updatePrismView();
+        }
     }
     
     if (data.speed !== undefined) {
-        speedSlider.value = data.speed;
-        speedValue.textContent = data.speed;
+        const spd = parseInt(data.speed, 10);
+        if (!isNaN(spd)) {
+            speedSlider.value = spd;
+            speedValue.textContent = spd;
+        }
     }
     
     if (data.led !== undefined) {

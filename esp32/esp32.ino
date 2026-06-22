@@ -13,6 +13,12 @@
 #define LED2_PIN 5      // Harici 2. LED (D5)
 #define RESET_BUTTON 14 // 🔥 WiFi Reset Butonu (D14)
 
+// 🔥 ULN2003A Motor Sürücü Pinleri
+const int IN1 = 18;
+const int IN2 = 19;
+const int IN3 = 21;
+const int IN4 = 22;
+
 // =====================
 // FIREBASE
 // =====================
@@ -43,7 +49,8 @@ unsigned long lastCheck = 0;
 // =====================
 // CONST
 // =====================
-const int STEP_ANGLE = 45;
+// 28BYJ-48 motor için Yarım Adım modunda 45 derece dönmek tam 512 adıma denk gelir.
+const int STEP_ANGLE = 512; 
 const int MAX_INDEX = 8;
 
 // =====================
@@ -88,22 +95,43 @@ void syncTime() {
 }
 
 // =====================
-// MOTOR SIMULATION
+// 🔥 ÇİFT YÖNLÜ VE HIZLI MOTOR DÖNÜŞ FONKSİYONU (YARIM ADIM)
 // =====================
-void rotateMotor(int steps, int speedVal) {
-  int delayTime = map(speedVal, 1, 100, 50, 5);
+void rotateMotor(int totalSteps, int speed, bool clockwise) {
+  // Siteden gelen 1-100 arası hız değerini, motorun yarım adım gecikmesine eşliyoruz.
+  int adimGecikmesi = map(speed, 1, 100, 3000, 850);
 
-  for (int i = 0; i < steps; i++) {
-    Serial.print("Step ");
-    Serial.print(i + 1);
-    Serial.print("/");
-    Serial.println(steps);
+  Serial.print("Motor donuyor... Yon: ");
+  Serial.print(clockwise ? "ILERI" : "GERI");
+  Serial.print(" | Hedef Adim: ");
+  Serial.println(totalSteps);
 
-    delay(delayTime);
-    yield();
+  for (int i = 0; i < totalSteps; i++) {
+    // İleri dönüşte adımlar 0'dan 7'ye akar, geri dönüşte 7'den 0'a geriler.
+    int adim = clockwise ? (i % 8) : (7 - (i % 8));
+    
+    // 8 Aşamalı Sürücü Tetikleme Dizisi
+    switch(adim) {
+      case 0: digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);  digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);  break;
+      case 1: digitalWrite(IN1, HIGH); digitalWrite(IN2, HIGH); digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);  break;
+      case 2: digitalWrite(IN1, LOW);  digitalWrite(IN2, HIGH); digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);  break;
+      case 3: digitalWrite(IN1, LOW);  digitalWrite(IN2, HIGH); digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);  break;
+      case 4: digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);  break;
+      case 5: digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);  digitalWrite(IN3, HIGH); digitalWrite(IN4, HIGH); break;
+      case 6: digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);  digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH); break;
+      case 7: digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);  digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH); break;
+    }
+    delayMicroseconds(adimGecikmesi);
+    yield(); // WiFi kopmalarını engellemek için arka plan işlerine izin ver
   }
 
-  Serial.println("Motor done");
+  // Motor bittikten sonra enerji harcamasın ve ısınmasın diye tüm bobinleri kapatıyoruz
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+
+  Serial.println("Motor donusu tamamlandi.");
 }
 
 // =====================
@@ -118,6 +146,12 @@ void setup() {
   pinMode(LED1_PIN, OUTPUT);
   pinMode(LED2_PIN, OUTPUT);
   
+  // Motor pinlerini çıkış olarak ayarlıyoruz
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
   // 🔥 Buton pinini dâhili Pull-up direnciyle giriş olarak ayarlıyoruz
   pinMode(RESET_BUTTON, INPUT_PULLUP);
 
@@ -230,7 +264,7 @@ void loop() {
       if (jsonData.success) slideInterval = jsonData.intValue;
 
       // =====================
-      // CALIBRATION
+      // CALIBRATION (1. Yüze Sıfırlama)
       // =====================
       if (calibrate) {
         Serial.println("\n=== CALIBRATION START ===");
@@ -239,7 +273,8 @@ void loop() {
         if (diff < 0) diff += MAX_INDEX;
         int steps = diff * STEP_ANGLE;
 
-        rotateMotor(steps, speedVal);
+        // Kalibrasyon işlemi varsayılan olarak ileri yönde çalışır
+        rotateMotor(steps, speedVal, true);
 
         photoIndex = 1;
         lastPhotoIndex = 1;
@@ -251,20 +286,37 @@ void loop() {
       }
 
       // =====================
-      // ROTATION (Siteden Elle Değişim)
+      // ROTATION (Siteden Elle Değişim - EN KISA YOL VE ÇİFT YÖN)
       // =====================
       if (photoIndex != lastPhotoIndex && !calibrate) {
         Serial.println("\n=== ROTATION ===");
+        
         int diff = photoIndex - lastPhotoIndex;
-        if (diff < 0) diff += MAX_INDEX;
+        bool clockwise = true;
+
+        // En kısa dairesel rotayı bulma optimizasyonu
+        if (diff > MAX_INDEX / 2) {
+          diff = diff - MAX_INDEX;
+        } else if (diff < -MAX_INDEX / 2) {
+          diff = diff + MAX_INDEX;
+        }
+
+        // Çıkan farkın işaretine göre yön tayini
+        if (diff < 0) {
+          clockwise = false;
+          diff = -diff; // Adım döngüsü için negatif değeri pozitife çekiyoruz
+        }
+
         int steps = diff * STEP_ANGLE;
 
         Serial.print("From ");
         Serial.print(lastPhotoIndex);
         Serial.print(" → ");
-        Serial.println(photoIndex);
+        Serial.print(photoIndex);
+        Serial.print(" | Yön: ");
+        Serial.println(clockwise ? "İLERİ" : "GERİ");
 
-        rotateMotor(steps, speedVal);
+        rotateMotor(steps, speedVal, clockwise);
         lastPhotoIndex = photoIndex;
         slideTimer = millis(); // Siteden elle seçim yapıldığında slayt süresini sıfırla
       }
@@ -285,7 +337,6 @@ void loop() {
   // 🔁 Otomatik Slayt Modu Kontrolü
   // =====================
   if (slideMode && !calibrate) {
-    // Saniye cinsinden gelen slideInterval değerini milisaniyeye çevirip kontrol ediyoruz
     if (millis() - slideTimer >= ((unsigned long)slideInterval * 1000)) {
       slideTimer = millis(); // Kronometreyi sonraki tur için hemen sıfırla
       
@@ -293,11 +344,9 @@ void loop() {
       int steps = STEP_ANGLE;
       
       // 🖤 Siyah yüzeyi (8. yüzü) atlama kontrolü:
-      // Eğer şu an 7. fotoğraftaysak, bir sonraki adım 8 değil doğrudan 1 olacak.
-      // 7'den 1'e geçmek için 2 katı (90 derece) dönmesi gerekir.
       if (photoIndex == 7) {
         nextIndex = 1;
-        steps = STEP_ANGLE * 2; 
+        steps = STEP_ANGLE * 2; // 7'den 1'e direkt zıplamak için 2 katı adım atar
         Serial.println("\n[SLIDE SHOW] 7. Fotoğraftan 1. Fotoğrafa geçiliyor (Siyah yüzey atlandı).");
       } 
       else if (nextIndex > MAX_INDEX) {
@@ -309,21 +358,20 @@ void loop() {
       Serial.print(" → ");
       Serial.println(nextIndex);
 
-      // Motoru fiziksel olarak döndür
-      rotateMotor(steps, speedVal);
+      // Slayt akışı her zaman ileri yönde devam eder
+      rotateMotor(steps, speedVal, true);
       
       // State'leri güncelle
       photoIndex = nextIndex;
       lastPhotoIndex = nextIndex;
 
-      // 📡 Sitenin de kayması için yeni index'i Firebase'e raporla (Push et)
+      // 📡 Sitenin de kayması için yeni index'i Firebase'e raporla
       if (Firebase.ready()) {
         Firebase.RTDB.setInt(&fbdo, "/device/photoIndex", nextIndex);
         Serial.println("[SLIDE SHOW] Yeni index Firebase'e gönderildi.");
       }
     }
   } else {
-    // Slayt modu kapalıysa zamanlayıcıyı sürekli güncel tut ki mod açıldığı an 0'dan temiz başlasın
     if (!slideMode) {
       slideTimer = millis();
     }
