@@ -247,11 +247,25 @@ function updateSlideTimeVisibility() {
         slideTime.style.opacity = '1';
         slideTime.style.pointerEvents = 'auto';
         if (note) note.style.display = 'none';
+        
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        prevBtn.style.opacity = '0.3';
+        nextBtn.style.opacity = '0.3';
+        prevBtn.style.pointerEvents = 'none';
+        nextBtn.style.pointerEvents = 'none';
     } else {
         slideTime.disabled = true;
         slideTime.style.opacity = '0.5';
         slideTime.style.pointerEvents = 'none';
         if (note) note.style.display = 'block';
+        
+        prevBtn.disabled = false;
+        nextBtn.disabled = false;
+        prevBtn.style.opacity = '1';
+        nextBtn.style.opacity = '1';
+        prevBtn.style.pointerEvents = 'auto';
+        nextBtn.style.pointerEvents = 'auto';
     }
 }
 
