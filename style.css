@@ -514,11 +514,11 @@ input:checked + .slider-toggle:before {
 /* Mobile Adjustments */
 @media (max-height: 700px) {
     .prism-container {
-        height: 250px;
+        height: 280px;
     }
     .prism {
-        width: 130px;
-        height: 182px;
+        width: 150px;
+        height: 210px;
     }
     .header {
         margin-bottom: 10px;
@@ -613,8 +613,8 @@ input:checked + .slider-toggle:before {
 
 @media (max-width: 380px) {
     .prism {
-        width: 150px;
-        height: 210px;
+        width: 170px;
+        height: 238px;
     }
     .nav-btn {
         width: 40px;
