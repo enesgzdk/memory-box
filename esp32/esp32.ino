@@ -2,7 +2,7 @@
 #include <WiFiManager.h>
 #include <Firebase_ESP_Client.h>
 #include "time.h"
-#include <Preferences.h> // 🔥 1. İÇ HAFIZA KİTAPLIĞINI EKLEDİK
+#include <Preferences.h> 
 
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
@@ -33,7 +33,7 @@ FirebaseConfig config;
 // =====================
 // STATE & MEMORY
 // =====================
-Preferences preferences; // 🔥 2. HAFIZA NESNESİNİ TANIMLADIK
+Preferences preferences; 
 
 int photoIndex = 1;
 int lastPhotoIndex = 1;
@@ -59,10 +59,8 @@ const int MAX_INDEX = 8;
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
   
-  // 🔥 3. KRİTİK: WiFiManager'ın arkada her saniye flash hafızaya yazmasını engelliyoruz!
-  // Sadece RAM'de tutacak, hafıza ömrü erimeyecek.
+  // 🔥 WiFiManager'ın arkada her saniye flash hafızaya yazmasını engelliyoruz!
   WiFi.persistent(false); 
-  
   WiFi.setSleep(false); 
 
   WiFiManager wm;
@@ -114,6 +112,7 @@ void rotateMotor(int totalSteps, int speed, bool clockwise) {
     delayMicroseconds(adimGecikmesi);
     yield(); 
   }
+  // Isınma Engelleme: Dönüş bittiğinde akımı tamamen kesiyoruz
   digitalWrite(IN1, LOW); digitalWrite(IN2, LOW); digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
 }
 
@@ -130,15 +129,12 @@ void setup() {
   pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT); pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
   pinMode(RESET_BUTTON, INPUT_PULLUP);
 
-  // 🔥 4. İÇ HAFIZAYI BAŞLATIYORUZ VE SON KALDIĞI YERİ OKUYORUZ
-  preferences.begin("mbox_ram", false); // "mbox_ram" isimli bir klasör açtık
-  
-  // Cihaz elektrik kesintisinden uyandığında Firebase'e sormadan önce hafızadan son indexi okur.
-  // Eğer hafıza bomboşsa (ilk açılışsa) varsayılan olarak 1 kabul eder.
+  // 🔥 İÇ HAFIZADAN SON KALDIĞI YERİ OKUYORUZ
+  preferences.begin("mbox_ram", false); 
   photoIndex = preferences.getInt("savedIndex", 1);
   lastPhotoIndex = photoIndex; 
   
-  Serial.print("🔥 [HAFIZA] Cihaz hafizadan uykudan uyandi. Son Konum: ");
+  Serial.print("🔥 [HAFIZA] Cihaz uykudan uyandi. Son Konum: ");
   Serial.println(photoIndex);
 
   connectWiFi();
@@ -154,7 +150,7 @@ void setup() {
   Firebase.reconnectWiFi(true);
   Serial.println("Firebase init done");
   
-  // 🔥 5. İlk açılışta Firebase'i hafızadan okuduğumuz güncel index ile eşitliyoruz
+  // 🔥 İlk açılışta Firebase'i hafızadan okuduğumuz güncel index ile eşitliyoruz
   if(Firebase.ready()){
      Firebase.RTDB.setInt(&fbdo, "/device/photoIndex", photoIndex);
      Serial.println("🔥 [HAFIZA] Firebase senkronizasyonu ilk acilista yapildi.");
@@ -196,7 +192,7 @@ void loop() {
     digitalWrite(LED1_PIN, LOW); digitalWrite(LED2_PIN, LOW);
 
     if (resetTriggered) {
-      // 🔥 6. WiFi resetlenirken bizim tuttuğumuz konum hafızasını da sıfırlıyoruz
+      // WiFi resetlenirken konum hafızasını da 1'e çekiyoruz
       preferences.putInt("savedIndex", 1);
       
       WiFiManager wm;
@@ -252,11 +248,16 @@ void loop() {
         lastPhotoIndex = 1;
         slideTimer = millis(); 
 
-        // 🔥 7. Kalibrasyon bitince hafızayı da 1. konuma çekiyoruz
+        // 7. Kalibrasyon bitince hafızayı da 1. konuma çekiyoruz
         preferences.putInt("savedIndex", 1);
 
-        Firebase.RTDB.setInt(&fbdo, "/device/photoIndex", 1);
-        Firebase.RTDB.setBool(&fbdo, "/device/calibrate", false);
+        // 🟢 KRİTİK JİLET DÜZELTME: Sonsuz döngüyü engellemek için lokal flag anında false çekiliyor!
+        calibrate = false; 
+
+        if (Firebase.ready()) {
+          Firebase.RTDB.setInt(&fbdo, "/device/photoIndex", 1);
+          Firebase.RTDB.setBool(&fbdo, "/device/calibrate", false);
+        }
         Serial.println("Calibration DONE");
       }
 
@@ -282,7 +283,7 @@ void loop() {
         lastPhotoIndex = photoIndex;
         slideTimer = millis(); 
 
-        // 🔥 8. Siteden elle motor döndürüldüğünde yeni konumu hafızaya kilitliyoruz
+        // Yeni konumu hafızaya kilitliyoruz
         preferences.putInt("savedIndex", photoIndex);
         Serial.print("🔥 [HAFIZA] Yeni konum kaydedildi: ");
         Serial.println(photoIndex);
@@ -306,8 +307,8 @@ void loop() {
       
       if (photoIndex == 7) {
         nextIndex = 1;
-        steps = STEP_ANGLE * 2; 
-        Serial.println("\n[SLIDE SHOW] 7. Fotoğraftan 1. Fotoğrafa geçiliyor (Siyah yüzey atlandı).");
+        steps = STEP_ANGLE * 2; // 7'den 1'e geçerken siyah yüzeyi atla
+        Serial.println("\n[SLIDE SHOW] 7. Fotograftan 1. Fotografa geciliyor (Siyah yuzey atlandi).");
       } 
       else if (nextIndex > MAX_INDEX) {
         nextIndex = 1;
@@ -318,12 +319,12 @@ void loop() {
       photoIndex = nextIndex;
       lastPhotoIndex = nextIndex;
 
-      // 🔥 9. Otomatik slayt modunda da yeni konumu hafızaya yazıyoruz
+      // Otomatik slaytta da yeni konumu hafızaya mühürlüyoruz
       preferences.putInt("savedIndex", photoIndex);
 
       if (Firebase.ready()) {
         Firebase.RTDB.setInt(&fbdo, "/device/photoIndex", nextIndex);
-        Serial.println("[SLIDE SHOW] Yeni index Firebase'e gönderildi.");
+        Serial.println("[SLIDE SHOW] Yeni index Firebase'e gonderildi.");
       }
     }
   } else {
