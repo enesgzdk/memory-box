@@ -71,7 +71,7 @@ function initPrism() {
             item.classList.add('black-screen');
         } else {
             const img = document.createElement('img');
-            img.src = `./src/${i}.jpg`;
+            img.src = `./src/${i}.JPEG`;
             img.alt = `Photo ${i}`;
             item.appendChild(img);
         }
