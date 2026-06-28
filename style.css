@@ -120,7 +120,7 @@ body {
 
 .prism-container {
     flex: 1;
-    height: 350px;
+    height: 400px;
     perspective: 1200px;
     display: flex;
     align-items: center;
@@ -130,8 +130,8 @@ body {
 }
 
 .prism {
-    width: 200px;
-    height: 280px;
+    width: 240px;
+    height: 336px;
     position: relative;
     transform-style: preserve-3d;
     display: flex;
@@ -514,11 +514,11 @@ input:checked + .slider-toggle:before {
 /* Mobile Adjustments */
 @media (max-height: 700px) {
     .prism-container {
-        height: 280px;
+        height: 320px;
     }
     .prism {
-        width: 150px;
-        height: 210px;
+        width: 180px;
+        height: 252px;
     }
     .header {
         margin-bottom: 10px;
@@ -613,8 +613,8 @@ input:checked + .slider-toggle:before {
 
 @media (max-width: 380px) {
     .prism {
-        width: 170px;
-        height: 238px;
+        width: 210px;
+        height: 294px;
     }
     .nav-btn {
         width: 40px;
