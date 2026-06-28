@@ -71,8 +71,10 @@ function initPrism() {
             item.classList.add('black-screen');
         } else {
             const img = document.createElement('img');
-            img.src = `./src/${i}.JPEG`;
+            img.src = `./src/${i}.webp`;
             img.alt = `Photo ${i}`;
+            img.decoding = 'async'; // Prevents UI freeze while parsing 1MB files
+            img.fetchPriority = 'high'; // Prioritize fetching
             item.appendChild(img);
         }
         
