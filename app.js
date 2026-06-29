@@ -34,6 +34,11 @@ const settingsCloseBtn = document.getElementById('settings-close-btn');
 const calConfirmBtn = document.getElementById('cal-confirm-btn');
 const splashScreen = document.getElementById('splash-screen');
 
+// Video Modal DOM
+const videoModal = document.getElementById('video-modal');
+const videoPlayer = document.getElementById('video-player');
+const videoCloseBtn = document.getElementById('video-close-btn');
+
 // State
 let currentPhotoIndex = 1;
 const TOTAL_FACES = 8;
@@ -317,18 +322,41 @@ calConfirmBtn.addEventListener('click', () => {
     }, 3000);
 });
 
-// Prevent Double-Tap Zoom on iOS / Mobile Safari
+// Video Modal Logic
+function openVideoForCurrentPhoto() {
+    if (currentPhotoIndex >= 1 && currentPhotoIndex <= 7) {
+        // Otomatik olarak src klasöründeki videoları çeker
+        videoPlayer.src = `./src/${currentPhotoIndex}.mp4`;
+        videoModal.classList.add('active');
+        videoPlayer.play().catch(e => console.log("Otomatik oynatma engellendi", e));
+    }
+}
+
+videoCloseBtn.addEventListener('click', () => {
+    videoModal.classList.remove('active');
+    videoPlayer.pause();
+    videoPlayer.currentTime = 0;
+});
+
+// Prevent Double-Tap Zoom on iOS / Mobile Safari & Handle Video Open
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(event) {
     let now = (new Date()).getTime();
     if (now - lastTouchEnd <= 300) {
         event.preventDefault();
+        // Open video if the active photo was double-tapped
+        if (event.target.closest('.prism-item.active')) {
+            openVideoForCurrentPhoto();
+        }
     }
     lastTouchEnd = now;
 }, false);
 
 document.addEventListener('dblclick', function(event) {
     event.preventDefault();
+    if (event.target.closest('.prism-item.active')) {
+        openVideoForCurrentPhoto();
+    }
 }, { passive: false });
 
 // Boot up
